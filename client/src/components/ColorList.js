@@ -52,7 +52,7 @@ const ColorList = ({ colors, updateColors, getColors }) => {
       });
   };
 
-  const addColor
+
 
   return (
     <div className="colors-wrap">
