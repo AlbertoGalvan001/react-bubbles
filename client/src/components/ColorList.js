@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { axiosWithAuth } from '../components/utils/axiosWithAuth';
 
 const initialColor = {
   color: "",
   code: { hex: "" }
 };
 
-const ColorList = ({ colors, updateColors }) => {
-  console.log(colors);
+const ColorList = ({ colors, updateColors, getColors }) => {
+  // console.log(colors);
   const [editing, setEditing] = useState(false);
+
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const [addingColor, setAddingColor] = useState(false);
+  const [colorToAdd, setColorToAdd] = useState(initialColor);
+  // console.log('ColorList color to edit', colorToEdit);
 
   const editColor = color => {
     setEditing(true);
@@ -21,25 +25,62 @@ const ColorList = ({ colors, updateColors }) => {
     // Make a put request to save your updated color
     // think about where will you get the id from...
     // where is is saved right now?
+    axiosWithAuth()
+      .put(`/api/colors/${colorToEdit.id}`, colorToEdit)
+      .then(res => {
+        // console.log('ColorList PUT response', res);
+        getColors();
+        setEditing(false);
+      })
+      .catch(err => {
+        alert('ColorList PUT error', err.response);
+        console.log(err);
+      });
+
   };
 
   const deleteColor = color => {
     // make a delete request to delete this color
+    axiosWithAuth()
+      .delete(`/api/colors/${color.id}`)
+      .then(res => {
+        console.log('ColorList DELETE response', res);
+        getColors();
+      })
+      .catch(err => {
+        alert('ColorList DELETE error', err);
+      });
+  };
+
+  const addColor = (e, color) => {
+    e.preventDefault();
+    axiosWithAuth()
+      .post(`/api/colors`, color)
+      .then(res => {
+        console.log('ColorList POST res', res);
+        getColors();
+        setAddingColor(false);
+      })
+      .catch(err => {
+        alert('ColorList POST eror', err);
+      });
   };
 
   return (
     <div className="colors-wrap">
       <p>colors</p>
+      <button onClick={() => setAddingColor(!addingColor)}>Add Color</button>
+      {/* ====== DELETE COLOR ====== */}
       <ul>
         {colors.map(color => (
           <li key={color.color} onClick={() => editColor(color)}>
             <span>
               <span className="delete" onClick={e => {
-                    e.stopPropagation();
-                    deleteColor(color)
-                  }
-                }>
-                  x
+                e.stopPropagation();
+                deleteColor(color)
+              }
+              }>
+                x
               </span>{" "}
               {color.color}
             </span>
@@ -50,6 +91,7 @@ const ColorList = ({ colors, updateColors }) => {
           </li>
         ))}
       </ul>
+      {/* ====== EDIT COLOR ====== */}
       {editing && (
         <form onSubmit={saveEdit}>
           <legend>edit color</legend>
@@ -80,9 +122,40 @@ const ColorList = ({ colors, updateColors }) => {
           </div>
         </form>
       )}
+      {/* ====== ADD NEW COLOR ====== */}
       <div className="spacer" />
       {/* stretch - build another form here to add a color */}
-    </div>
+      {addingColor && (
+        <form onSubmit={e => addColor(e, colorToAdd)}>
+          <legend>add color</legend>
+          <label>
+            color name:
+            <input
+              onChange={e =>
+                setColorToAdd({ ...colorToAdd, color: e.target.value })
+              }
+              value={colorToAdd.color}
+            />
+          </label>
+          <label>
+            hex code:
+            <input
+              onChange={e =>
+                setColorToAdd({
+                  ...colorToAdd,
+                  code: { hex: e.target.value }
+                })
+              }
+              value={colorToAdd.code.hex}
+            />
+          </label>
+          <div className='button-row'>
+            <button type='submit'>Add</button>
+            <button onClick={() => setAddingColor(false)}>cancel</button>
+          </div>
+        </form>
+      )}
+    </div> /*COLOR WRAP CONTAINER*/
   );
 };
 
